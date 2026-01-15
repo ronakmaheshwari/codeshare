@@ -1,0 +1,85 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  //output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  viewer
+  editor
+}
+
+model User {
+  id String @id @default(uuid())
+  name String 
+  email String @unique
+  password String 
+  isDeleted Boolean @default(false)
+  createdAt DateTime @default(now())
+
+  roomsOwned Room[] @relation("RoomOwner")
+  participants Participant[]
+  archives     CodeArchive[]
+}
+
+model Room {
+  id String @id @default(uuid())
+  link String @unique
+  title String?
+  language String @default("plaintext")
+  content String @default("")
+  isPublic Boolean @default(true)
+  isDeleted Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ownerId String
+  owner User @relation("RoomOwner", fields: [ownerId], references: [id])
+
+  participants Participant[]
+  archives     CodeArchive[]
+  @@index([link])
+  @@index([ownerId])
+}
+
+model Participant {
+  id String @id @default(uuid())
+  userId String
+  roomId String
+
+  role Role @default(viewer)
+  joinedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  room Room @relation(fields: [roomId], references: [id])
+
+  @@unique([userId, roomId])
+  @@index([roomId])
+}
+
+model CodeArchive {
+  id String @id @default(uuid())
+
+  userId String? 
+  roomId String
+  
+  content String 
+  language String?
+  createdAt DateTime @default(now())
+
+  room Room @relation(fields: [roomId], references: [id])
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([roomId])
+  @@index([createdAt])
+}
