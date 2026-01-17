@@ -1,3 +1,4 @@
+import { password } from "bun"
 import z, { email } from "zod"
 
 export const signupValidation = z.object({
@@ -9,6 +10,16 @@ export const signupValidation = z.object({
 export const loginValidation = z.object({
     email: z.email(),
     password: z.string({error: "Password must be alphanumeric"}).min(5,{error:"Password must be 5 letters long"}).max(32,{error:"Password must be less than 32 letters"})
+})
+
+export const resetValidation = z.object({
+    email: z.email(),
+    password: z.string({error: "Password must be alphanumeric"}).min(5,{error:"Password must be 5 letters long"}).max(32,{error:"Password must be less than 32 letters"})
+})
+
+export const resetPasswordValidation = z.object({
+    password: z.string({error: "Password must be alphanumeric"}).min(5,{error:"Password must be 5 letters long"}).max(32,{error:"Password must be less than 32 letters"}),
+    newpassword: z.string({error: "Password must be alphanumeric"}).min(5,{error:"Password must be 5 letters long"}).max(32,{error:"Password must be less than 32 letters"})
 })
 
 export const roomValidation = z.object({
@@ -24,5 +35,7 @@ export const messageValidation = z.object({
 
 export type signupType = z.infer<typeof signupValidation>
 export type loginType = z.infer<typeof loginValidation>
+export type resetType = z.infer<typeof resetValidation>
+export type resetPasswordType = z.infer<typeof resetPasswordValidation>
 export type roomType = z.infer<typeof roomValidation>
 export type messageType = z.infer<typeof messageValidation>
