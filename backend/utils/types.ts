@@ -1,3 +1,4 @@
+import { Role } from "@prisma/client"
 import { password } from "bun"
 import z, { email } from "zod"
 
@@ -31,6 +32,11 @@ export const roomValidation = z.object({
 export const messageValidation = z.object({
     link: z.string(),
     content: z.string()
+})
+
+export const roleUpgradeValidation = z.object({
+    updatedUser: z.string().min(5,{error:"Invalid userId was provided"}),
+    role: z.enum(Role,{error: "Invalid role was provided"})
 })
 
 export type signupType = z.infer<typeof signupValidation>
