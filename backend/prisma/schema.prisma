@@ -26,7 +26,6 @@ model User {
   password String 
   isDeleted Boolean @default(false)
   createdAt DateTime @default(now())
-
   roomsOwned Room[] @relation("RoomOwner")
   participants Participant[]
   archives     CodeArchive[]
@@ -38,6 +37,7 @@ model Room {
   title String?
   language String @default("plaintext")
   content String @default("")
+  isEditable Boolean @default(true)
   isPublic Boolean @default(true)
   isDeleted Boolean @default(false)
   createdAt   DateTime @default(now())
