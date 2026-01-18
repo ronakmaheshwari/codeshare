@@ -124,7 +124,7 @@ roomRouter.post("/role/:link", userMiddleware, async (req: Request, res: Respons
       if (!userId) {
         return res.status(401).json({
           error: true,
-          message: "Unauthorized",
+          message: "Unauthorized user tried to access the service",
         });
       }
 
@@ -292,6 +292,60 @@ roomRouter.patch("/upgrade/:link", userMiddleware, async (req: Request, res: Res
         error: true,
         message: "Internal server error",
       });
+    }
+})
+
+roomRouter.delete("/:link",userMiddleware, async (req: Request, res: Response) => {
+    try {
+        const user = req.userId;
+        if (!user) {
+            return res.status(401).json({
+                error: true,
+                message: "Unauthorized user tried to access the service",
+            });
+        }
+        const link = req.params.link as string;
+        if(!link){
+            return res.status(401).json({
+                error: true,
+                message: "No link was provided"
+            })
+        }
+        const findLink = await db.room.findUnique({
+            where:{
+                link
+            }
+        })
+        if(!findLink){
+            return res.status(404).json({
+                error: true,
+                message: `Invalid link ${link} was provided`
+            })
+        }
+        if(findLink.ownerId !== user){
+            return res.status(401).json({
+                error: true,
+                message: "You are not the owner of this room"
+            })
+        }
+        const deleteRoom = await db.room.update({
+            where:{
+                link
+            },
+            data:{
+                isDeleted: true
+            }
+        })
+        return res.status(200).json({
+            error: false,
+            message: `${link} and the room is successfully deleted from the server`
+        })
+    } catch (error) {
+        console.error("[Room Upgrade Error]", error);
+        return res.status(500).json({
+            error: true,
+            message: "Internal server error",
+        });
     }
 })
 
