@@ -1,3 +1,5 @@
+import db from "./db";
+
 const linkGenerator = (length: number): string => {
     try {
         const allLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -15,6 +17,24 @@ const linkGenerator = (length: number): string => {
     } catch (error) {
         console.log(`[Link Generator]: Error took place at ${error}`);
         return "Link couldn't be generated";
+    }
+}
+
+export const Duplicate_links = async (link: string): Promise<boolean> => {
+    try {
+        const finder = await db.room.findUnique({
+            where:{
+                link
+            }
+        })
+        if(finder){
+            return true
+        }
+
+        return false
+    } catch (error) {
+        console.log("Error took place at duplicate link finder");
+        return false
     }
 }
 

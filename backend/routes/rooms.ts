@@ -2,30 +2,12 @@ import { Router, type Request, type Response } from "express";
 import dotenv from "dotenv"
 import { userMiddleware } from "../middleware";
 import db from "../utils/db";
-import linkGenerator from "../utils/link";
+import linkGenerator, { Duplicate_links } from "../utils/link";
 import { roleUpgradeValidation } from "../utils/types";
 
 dotenv.config();
 
 const roomRouter: Router = Router();
-
-export const Duplicate_links = async (link: string): Promise<boolean> => {
-    try {
-        const finder = await db.room.findUnique({
-            where:{
-                link
-            }
-        })
-        if(finder){
-            return true
-        }
-
-        return false
-    } catch (error) {
-        console.log("Error took place at duplicate link finder");
-        return false
-    }
-}
 
 roomRouter.post("/create", userMiddleware, async (req: Request, res: Response) => {
     try {
