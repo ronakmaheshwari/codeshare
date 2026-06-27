@@ -3,10 +3,11 @@ import dotenv from "dotenv"
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 import dayjs from "dayjs";
-import { loginValidation, resetPasswordValidation, resetValidation, signupValidation } from "../utils/types";
+import { loginValidation, resetOptValidation, resetPasswordValidation, resetValidation, signupValidation } from "../utils/types";
 import db from "../utils/db";
-import { loginLimiter, resetLimiter } from "../utils/limiter";
+import { loginLimiter, otpLimiter, resetLimiter } from "../utils/limiter";
 import { userMiddleware } from "../middleware";
+import { otpGenerator } from "../utils/link";
 
 dotenv.config()
 const salt: Number = Number(process.env.SALT_ROUND) || 10
@@ -31,7 +32,7 @@ userRouter.post("/signup",async (req:Request, res: Response) => {
                 data: error
             })
         }
-        const {name,email,password} = parsed.data;
+        const {name, email, password} = parsed.data;
         const findUser = db.user.findUnique({
             where:{
                 email: email
@@ -51,7 +52,7 @@ userRouter.post("/signup",async (req:Request, res: Response) => {
                 password: hashed
             }
         })
-        const token = jwt.sign({userId: createUser.id},JwtSecret);
+        const token = jwt.sign({userId: createUser.id}, JwtSecret);
         return res.status(200).json({
             error: false,
             message: `${createUser.name} was successfully created`,
@@ -66,7 +67,7 @@ userRouter.post("/signup",async (req:Request, res: Response) => {
     }
 })
 
-userRouter.post("/login",loginLimiter,async (req:Request, res: Response) => {
+userRouter.post("/login", loginLimiter, async (req:Request, res: Response) => {
     try {
         const parsed = loginValidation.safeParse(req.body);
         if(!parsed.success){
@@ -110,9 +111,46 @@ userRouter.post("/login",loginLimiter,async (req:Request, res: Response) => {
     }
 })
 
+userRouter.get("/otp", otpLimiter, async(req: Request, res: Response) => {
+    try {
+        const parsed = resetOptValidation.safeParse(req.query);
+        if(!parsed.success) {
+            const error = parsed.error.format();
+            return res.status(401).json({
+                error: true,
+                message: "Invalid data format was provided",
+                data: error
+            })
+        }
+        const { email } = parsed.data;
+        const findEmail = await db.user.findUnique({
+            where: {
+                email: email
+            }
+        });
+
+        if(!findEmail) {
+            return res.status(401).json({
+                error: true,
+                message: "Invalid email was provided",
+            }) 
+        }
+
+        const otp = await otpGenerator(6);
+        
+    } catch (error) {
+        console.log("[User OTP]: Error took at ",error);
+        return res.status(500).json({
+            error: true,
+            message: "Internal error took place"
+        })
+    }
+})
+
 userRouter.post("/forget-password", resetLimiter, async (req: Request, res: Response) => {
     try {
         const parsed = resetValidation.safeParse(req.body);
+
         if(!parsed.success){
             const error = parsed.error.format();
             return res.status(401).json({
@@ -121,6 +159,7 @@ userRouter.post("/forget-password", resetLimiter, async (req: Request, res: Resp
                 data: error
             })
         }
+
         const {email,password} = parsed.data;
         
         const findEmail = await db.user.findUnique({

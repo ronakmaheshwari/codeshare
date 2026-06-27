@@ -13,8 +13,13 @@ export const loginValidation = z.object({
     password: z.string({error: "Password must be alphanumeric"}).min(5,{error:"Password must be 5 letters long"}).max(32,{error:"Password must be less than 32 letters"})
 })
 
+export const resetOptValidation = z.object({
+    email: z.email(),
+})
+
 export const resetValidation = z.object({
     email: z.email(),
+    otp: z.string().min(6, {error: "INVALID OTP was provided"}).max(6, {error: "INVALID OTP was provided"}),
     password: z.string({error: "Password must be alphanumeric"}).min(5,{error:"Password must be 5 letters long"}).max(32,{error:"Password must be less than 32 letters"})
 })
 
@@ -41,6 +46,7 @@ export const roleUpgradeValidation = z.object({
 
 export type signupType = z.infer<typeof signupValidation>
 export type loginType = z.infer<typeof loginValidation>
+export type resetOtpType = z.infer<typeof resetOptValidation>
 export type resetType = z.infer<typeof resetValidation>
 export type resetPasswordType = z.infer<typeof resetPasswordValidation>
 export type roomType = z.infer<typeof roomValidation>

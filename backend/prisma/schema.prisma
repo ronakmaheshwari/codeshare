@@ -26,6 +26,8 @@ model User {
   password String 
   isDeleted Boolean @default(false)
   createdAt DateTime @default(now())
+  resetPasswordOtp String? 
+  resetPasswordOtpExpire DateTime? 
   roomsOwned Room[] @relation("RoomOwner")
   participants Participant[]
   archives     CodeArchive[]

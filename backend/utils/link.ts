@@ -18,7 +18,7 @@ const linkGenerator = (length: number): string => {
         console.log(`[Link Generator]: Error took place at ${error}`);
         return "Link couldn't be generated";
     }
-}
+};
 
 export const Duplicate_links = async (link: string): Promise<boolean> => {
     try {
@@ -36,6 +36,20 @@ export const Duplicate_links = async (link: string): Promise<boolean> => {
         console.log("Error took place at duplicate link finder");
         return false
     }
-}
+};
+
+export const otpGenerator = async (length: number): Promise<string> => {
+    try {
+        const alphanumeric = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        let otp = "";
+        for(let i = 0; i < length; i++) {
+            otp += alphanumeric.charAt(Math.floor(Math.random() * alphanumeric.length));
+        };
+        return otp;
+    } catch (error) {
+        console.log(`[OTP Generator]: Error took place at ${error}`);
+        return "OTP couldn't be generated";
+    }
+};
 
 export default linkGenerator;
