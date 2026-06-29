@@ -1,89 +1,167 @@
-import ws, { WebSocket, WebSocketServer } from "ws"
-import express from "express"
 import dotenv from "dotenv"
+import express from "express"
 import jwt, { type JwtPayload } from "jsonwebtoken"
-import db from "./utils/db";
+import { URL } from "url"
+import ws, { WebSocket, WebSocketServer } from "ws"
+import db from "./utils/db"
+import type { Prisma } from "@prisma/client"
 
-dotenv.config();
-const app = express();
-const port = process.env.WS || 3001
-const server = app.listen(port,()=>{
-    console.log(`WS Server running on ${port}`)
-})
+dotenv.config()
+const app = express()
+const port = process.env.WS_PORT || "3001";
+const server = app.listen(port, () => {
+    console.log(`Websocket server is running on ${port}`);
+});
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 if (!JWT_SECRET) {
-  throw new Error("JWT secret is missing")
+    throw new Error("JWT secret is missing")
 }
 
-interface Authsocket extends WebSocket {
-    userId: string,
-    role?: string
+interface AuthSocket extends WebSocket {
+    userId?: string,
+    roomId?: string,
 }
 
-const wss = new WebSocketServer({server: server});
+interface PayloadType {
+    type: "UPDATE_CONTENT";
+    content: string;
+}
 
-const sendError = async (socket: WebSocket, message?:string) => {
-    socket.send(
-        JSON.stringify({
+const wss = new WebSocketServer({server});
+const roomClients = new Map<string, Set<AuthSocket>>();
+
+const sendError = (socket: WebSocket, message: string) => {
+    if(socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({
+            message: message,
             error: "ERROR",
-            data: message ? message : "Internal Error occured"
-        })
-    )
+        }))
+    }
+    socket.close();
 }
 
-wss.on("connection",async (ws, req)=>{
-    const url = require('url');
-    const parsedUrl = url.parse(req.url, true);
-    const token = parsedUrl.query.token as string;
-    const link = parsedUrl.query.link as string;
-    
-    if(!token || !link){
-        sendError(ws,"Unauthorized user tried to access the serviece")
+wss.on('connection', async(socket, req) => {
+    const authSocket = socket as AuthSocket;
+    const parseURL = new URL(req.url!, `ws://localhost:${port}`);
+    const token = parseURL.searchParams.get("token");
+    const link = parseURL.searchParams.get("link");
+
+    if(!token || !link) {
+        sendError(socket, "No Link or Token was provided")
+        return;
     }
 
-    const decoded = jwt.verify(token,JWT_SECRET) as unknown as JwtPayload & {
-        userId: string,
-        role?: string
-    } ;
-
-    if(!decoded.userId){
-        sendError(ws,"Unauthorized user tried to access the serviece");
+    let decoded: JwtPayload & {userId: string};
+    try {
+        decoded = jwt.verify(token, JWT_SECRET) as unknown as JwtPayload & { userId: string };
+    } catch (error) {
+        sendError(authSocket, "Invalid or expired token");
+        return;
     }
-    
-    const user = ws as Authsocket
-    user.userId = decoded.userId;
-    user.role = decoded.role;
+
+    if(!decoded.userId) {
+        sendError(authSocket, "Token missing userId");
+        return;
+    }
+
+    authSocket.userId = decoded.userId;
 
     const findLink = await db.room.findUnique({
-        where:{
-            link
+        where: {
+            link: link
         },
-        include:{
-            participants: true
+        include: {
+            participants: true,
         }
     })
 
-    if(!findLink){
-        sendError(ws,"Invalid link was provided")
-        return
+    if(!findLink) {
+        sendError(socket, "Invalid Link was provided");
+        return;
     }
-    const participant = findLink.participants.some((x)=>{
-        return x.userId === user.userId
+
+    const addParticipant = findLink.participants.some((x) => {
+        x.userId === authSocket.userId;
     })
 
-    if(!participant){
-       await db.participant.create({
-        data:{
-            userId: user.userId,
-            roomId: findLink.id,
-            role: "viewer"
+    if(!addParticipant) {
+        await db.participant.create({
+            data: {
+                userId: authSocket.userId,
+                roomId: findLink.id,
+                role: "viewer"
+            }
+        })
+    };
+
+    authSocket.roomId = findLink.id;
+    if(!roomClients.has(findLink.id)) {
+        roomClients.set(findLink.id, new Set());
+    }
+    roomClients.get(findLink.id)!.add(authSocket);
+
+    socket.on('message', async (raw) => {
+        let payload: PayloadType;
+        try {
+            payload = JSON.parse(raw.toString());
+        } catch (error) {
+            return;
         }
-       })
-    }
 
-    ws.on("message",async (raw) => {
-        
-    })
+        if (payload.type !== "UPDATE_CONTENT" || typeof payload.content !== "string") {
+            return;
+        }
 
-})
+        const participant = await db.participant.findUnique({
+            where: {
+                userId_roomId: {
+                    userId: authSocket.userId as string,
+                    roomId: findLink.id
+                }
+            }
+        });
+
+        if (!participant || participant.role === "viewer") {
+            sendError(authSocket, "You are a viewer and cannot edit");
+            return;
+        }
+
+        const updated = await db.$transaction(async (tx: Prisma.TransactionClient) => {
+            const room = await tx.room.update({
+                where: { id: findLink.id },
+                data: { content: payload.content }
+            });
+
+            await tx.codeArchive.create({
+                data: {
+                    userId: authSocket.userId,
+                    roomId: findLink.id,
+                    content: payload.content,
+                    language: "plaintext"
+                }
+            });
+
+            return room;
+        });
+
+        const clients = roomClients.get(findLink.id);
+        if(clients) {
+            for (const client of clients) {
+                if (client !== authSocket && client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify({ content: updated.content }));
+                }
+            }
+        }
+    });
+
+    socket.on("close", () => {
+        const clients = roomClients.get(findLink.id);
+        if (clients) {
+            clients.delete(authSocket);
+            if (clients.size === 0) {
+                roomClients.delete(findLink.id);
+            }
+        }
+    });
+}) 

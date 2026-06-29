@@ -9,6 +9,60 @@ dotenv.config();
 
 const roomRouter: Router = Router();
 
+roomRouter.get("/:link",userMiddleware, async (req: Request, res: Response) => {
+    try {
+        const user = req.userId;
+        if(!user){
+            return res.status(400).json({
+                error: true,
+                message: "Unauthorized user tried to access the server"
+            })
+        }
+        const link = req.params.link as string;
+        if(!link){
+            return res.status(401).json({
+                error: true,
+                message: "No link was provided"
+            })
+        }
+        
+        const findLink = await db.room.findUnique({
+            where:{
+                link
+            },
+            include: {
+                participants: { where: { userId: user } },
+            },
+        })
+        
+        if(!findLink){
+            return res.status(404).json({
+                error: true,
+                message: `Invalid link ${link} was provided`
+            })
+        }
+
+        if (findLink.participants.length === 0) {
+            return res.status(403).json({
+                error: true,
+                message: "Access denied",
+            });
+        }
+        
+        return res.status(200).json({
+            error: false,
+            message: "Details were successfully fetched for that room",
+            data: findLink
+        })
+    } catch (error) {
+        console.log("[GET Content]: Error took at ",error);
+        return res.status(500).json({
+            error: true,
+            message: "Internal error took place"
+        })
+    }
+})
+
 roomRouter.post("/create", userMiddleware, async (req: Request, res: Response) => {
     try {
         const user = req.userId;
@@ -70,6 +124,60 @@ roomRouter.post("/create", userMiddleware, async (req: Request, res: Response) =
     }
 })
 
+roomRouter.delete("/:link",userMiddleware, async (req: Request, res: Response) => {
+    try {
+        const user = req.userId;
+        if (!user) {
+            return res.status(401).json({
+                error: true,
+                message: "Unauthorized user tried to access the service",
+            });
+        }
+        const link = req.params.link as string;
+        if(!link){
+            return res.status(401).json({
+                error: true,
+                message: "No link was provided"
+            })
+        }
+        const findLink = await db.room.findUnique({
+            where:{
+                link
+            }
+        })
+        if(!findLink){
+            return res.status(404).json({
+                error: true,
+                message: `Invalid link ${link} was provided`
+            })
+        }
+        if(findLink.ownerId !== user){
+            return res.status(401).json({
+                error: true,
+                message: "You are not the owner of this room"
+            })
+        }
+        const deleteRoom = await db.room.update({
+            where:{
+                link
+            },
+            data:{
+                isDeleted: true
+            }
+        })
+        return res.status(200).json({
+            error: false,
+            message: `${link} and the room is successfully deleted from the server`
+        })
+    } catch (error) {
+        console.error("[Room Upgrade Error]", error);
+        return res.status(500).json({
+            error: true,
+            message: "Internal server error",
+        });
+    }
+})
+
 roomRouter.get("/download/:link", userMiddleware,async (req: Request, res: Response) => {
     try {
         const user = req.userId;
@@ -107,6 +215,7 @@ roomRouter.get("/download/:link", userMiddleware,async (req: Request, res: Respo
                 message: `Invalid link ${link} was provided`
             })
         }
+        
         const isParticipant = findLink.participants.some(
             (p) => p.userId === user
         );
@@ -118,6 +227,7 @@ roomRouter.get("/download/:link", userMiddleware,async (req: Request, res: Respo
             message: "You are not authorized to download this file",
         });
         }
+
         const filename = `${link}.md`
         res.setHeader("Content-Disposition",`attachment; filename="${filename}"`)
         res.setHeader("Content-Type", "text/plain; charset=utf-8");
@@ -333,6 +443,7 @@ roomRouter.patch("/upgrade/:link", userMiddleware, async (req: Request, res: Res
             },
             },
         });
+        
         if(!room){
             return res.status(404).json({
                 error: true,
@@ -382,114 +493,6 @@ roomRouter.patch("/upgrade/:link", userMiddleware, async (req: Request, res: Res
         error: true,
         message: "Internal server error",
       });
-    }
-})
-
-roomRouter.get("/:link",userMiddleware, async (req: Request, res: Response) => {
-    try {
-        const user = req.userId;
-        if(!user){
-            return res.status(400).json({
-                error: true,
-                message: "Unauthorized user tried to access the server"
-            })
-        }
-        const link = req.params.link as string;
-        if(!link){
-            return res.status(401).json({
-                error: true,
-                message: "No link was provided"
-            })
-        }
-        
-        const findLink = await db.room.findUnique({
-            where:{
-                link
-            },
-            include: {
-                participants: { where: { userId: user } },
-            },
-        })
-        
-        if(!findLink){
-            return res.status(404).json({
-                error: true,
-                message: `Invalid link ${link} was provided`
-            })
-        }
-
-        if (findLink.participants.length === 0) {
-            return res.status(403).json({
-                error: true,
-                message: "Access denied",
-            });
-        }
-        
-        return res.status(200).json({
-            error: false,
-            message: "Details were successfully fetched for that room",
-            data: findLink
-        })
-    } catch (error) {
-        console.log("[GET Content]: Error took at ",error);
-        return res.status(500).json({
-            error: true,
-            message: "Internal error took place"
-        })
-    }
-})
-
-roomRouter.delete("/:link",userMiddleware, async (req: Request, res: Response) => {
-    try {
-        const user = req.userId;
-        if (!user) {
-            return res.status(401).json({
-                error: true,
-                message: "Unauthorized user tried to access the service",
-            });
-        }
-        const link = req.params.link as string;
-        if(!link){
-            return res.status(401).json({
-                error: true,
-                message: "No link was provided"
-            })
-        }
-        const findLink = await db.room.findUnique({
-            where:{
-                link
-            }
-        })
-        if(!findLink){
-            return res.status(404).json({
-                error: true,
-                message: `Invalid link ${link} was provided`
-            })
-        }
-        if(findLink.ownerId !== user){
-            return res.status(401).json({
-                error: true,
-                message: "You are not the owner of this room"
-            })
-        }
-        const deleteRoom = await db.room.update({
-            where:{
-                link
-            },
-            data:{
-                isDeleted: true
-            }
-        })
-        return res.status(200).json({
-            error: false,
-            message: `${link} and the room is successfully deleted from the server`
-        })
-    } catch (error) {
-        console.error("[Room Upgrade Error]", error);
-        return res.status(500).json({
-            error: true,
-            message: "Internal server error",
-        });
     }
 })
 

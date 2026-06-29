@@ -8,6 +8,7 @@ import db from "../utils/db";
 import { loginLimiter, otpLimiter, resetLimiter } from "../utils/limiter";
 import { userMiddleware } from "../middleware";
 import { otpGenerator } from "../utils/link";
+import { sendEmailOtp } from "../utils/otp/otp";
 
 dotenv.config()
 const salt: Number = Number(process.env.SALT_ROUND) || 10
@@ -33,17 +34,19 @@ userRouter.post("/signup",async (req:Request, res: Response) => {
             })
         }
         const {name, email, password} = parsed.data;
-        const findUser = db.user.findUnique({
+        const findUser = await db.user.findUnique({
             where:{
                 email: email
             }
         })
-        if(!findUser){
+
+        if(findUser){
             return res.status(409).json({
                 error: true,
                 message: `${email} already exists with our platform`
             })
         }
+
         const hashed = await bcrypt.hash(password,Number(salt));
         const createUser = await db.user.create({
             data:{
@@ -137,7 +140,22 @@ userRouter.get("/otp", otpLimiter, async(req: Request, res: Response) => {
         }
 
         const otp = await otpGenerator(6);
-        
+        const otpExpire = new Date(Date.now() + 5 * 60 * 1000);
+        const addOtp = await db.user.update({
+            where: {
+                email: email
+            },
+            data: {
+                resetPasswordOtp: otp,
+                resetPasswordOtpExpire: otpExpire,
+            }
+        })
+        await sendEmailOtp(email, otp);
+
+        res.status(200).json({
+            error: false,
+            message: `OTP was sent to your ${email}`
+        })
     } catch (error) {
         console.log("[User OTP]: Error took at ",error);
         return res.status(500).json({
@@ -160,7 +178,7 @@ userRouter.post("/forget-password", resetLimiter, async (req: Request, res: Resp
             })
         }
 
-        const {email,password} = parsed.data;
+        const {email, otp ,  password} = parsed.data;
         
         const findEmail = await db.user.findUnique({
             where:{
@@ -174,7 +192,16 @@ userRouter.post("/forget-password", resetLimiter, async (req: Request, res: Resp
                 message: "No email was registered with our services"
             })
         }
+
+        if(!findEmail.resetPasswordOtpExpire || findEmail.resetPasswordOtp !== otp || findEmail.resetPasswordOtpExpire < new Date(Date.now())) {
+            return res.status(401).json({
+                error: true,
+                message: "Invalid or expired OTP"
+            })
+        }
+
         const hashed = await bcrypt.hash(password,Number(salt));
+
         const updatePassword = await db.user.update({
             where:{
                 email
@@ -183,6 +210,7 @@ userRouter.post("/forget-password", resetLimiter, async (req: Request, res: Resp
                 password: hashed
             }
         })
+
         return res.status(200).json({
             error: false,
             message: `${findEmail.email} password change request wad successfully handled`,
@@ -246,13 +274,13 @@ userRouter.get("/user", userMiddleware, async (req: Request, res: Response) => {
                 name: findUser.name,
                 email: findUser.email,
                 createdAt: dayjs(findUser.createdAt).format("DD MMM YYY, hh:mm A"),
-                rooms: findUser.roomsOwned.map((x)=>{
-                    id: x.id
-                    title: x.title
-                    link: x.link
-                    language: x.language
+                rooms: findUser.roomsOwned.map((x) => ({
+                    id: x.id,
+                    title: x.title,
+                    link: x.link,
+                    language: x.language,
                     createdAt: dayjs(x.createdAt).format("DD MMM YYYY, hh:mm A")
-                })
+                }))
             },
             count: roomCount
         })
@@ -265,7 +293,7 @@ userRouter.get("/user", userMiddleware, async (req: Request, res: Response) => {
     }
 })
 
-userRouter.post("/reset-password",resetLimiter,async (req: Request, res: Response) => {
+userRouter.post("/reset-password", userMiddleware, resetLimiter,async (req: Request, res: Response) => {
     try {
         const user = req.userId;
         if(!user){
@@ -276,6 +304,7 @@ userRouter.post("/reset-password",resetLimiter,async (req: Request, res: Respons
         }
 
         const parsed = resetPasswordValidation.safeParse(req.body);
+
         if(!parsed.success){
             const error = parsed.error.format();
             return res.status(401).json({
@@ -284,6 +313,7 @@ userRouter.post("/reset-password",resetLimiter,async (req: Request, res: Respons
                 data: error
             })
         }
+
         const {password, newpassword} = parsed.data;
 
         const findUser = await db.user.findUnique({
@@ -291,19 +321,23 @@ userRouter.post("/reset-password",resetLimiter,async (req: Request, res: Respons
                 id: user
             }
         })
+
         if(!findUser){
             return res.status(404).json({
                 error: true,
                 message: "User not found",
             });
         }
+
         const checkPassword = await bcrypt.compare(password, findUser.password);
+
         if(!checkPassword){
             return res.status(400).json({
                 error: true,
                 message: "Invalid password was provided"
             })
         }
+        
         const hashed = await bcrypt.hash(newpassword,Number(salt));
         const updatePassword = await db.user.update({
             where: {
