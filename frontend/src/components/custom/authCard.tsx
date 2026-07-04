@@ -11,6 +11,10 @@ import {
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Shapes, Eye, EyeOff, Loader2 } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import api from "@/lib/api";
+import { toast } from "sonner";
+import GoogleButton from "react-google-button";
 
 interface AuthProps {
   type: "signup" | "signin";
@@ -53,8 +57,6 @@ const AuthCard = ({ type }: AuthProps) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
-
-    // Clear field-level error as the user edits
     setErrors((prev) => (prev[id as keyof FormErrors] ? { ...prev, [id]: undefined } : prev));
   };
 
@@ -84,6 +86,35 @@ const AuthCard = ({ type }: AuthProps) => {
     return next;
   }, [formData, isSignup]);
 
+  const mutation = useMutation({
+    mutationFn: async() => {
+      if(isSignup) {
+        const response = await api.post("/user/signup", {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password
+        })
+
+        return response.data
+      } else {
+        const response = await api.post("/user/login", {
+          email: formData.email,
+          password: formData.password
+        });
+
+        return response.data;
+      }
+    },
+    onSuccess: (data) => {
+      setToken(data.token);
+      navigate("/home");
+    },
+    onError: (data) => {
+      const err = data.message ?? "An unexpected error took place";
+      toast(err);
+    }
+  })
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -95,45 +126,9 @@ const AuthCard = ({ type }: AuthProps) => {
 
     setIsSubmitting(true);
     setErrors({});
-
-    try {
-      const endpoint = isSignup ? "/api/auth/signup" : "/api/auth/signin";
-      const payload = isSignup
-        ? {
-            name: formData.name.trim(),
-            email: formData.email.trim().toLowerCase(),
-            password: formData.password,
-          }
-        : {
-            email: formData.email.trim().toLowerCase(),
-            password: formData.password,
-          };
-
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json().catch(() => null);
-
-      if (!res.ok) {
-        throw new Error(data?.message || "Something went wrong. Please try again.");
-      }
-
-      if (!data?.token) {
-        throw new Error("Unexpected response from server.");
-      }
-
-      setToken(data.token);
-      navigate("/");
-    } catch (err) {
-      setErrors({
-        form: err instanceof Error ? err.message : "Unable to authenticate. Please try again.",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    
+    mutation.mutate();
+    setIsSubmitting(false);
   };
 
   return (
@@ -304,7 +299,7 @@ const AuthCard = ({ type }: AuthProps) => {
                 Already have an account?{" "}
                 <button
                   type="button"
-                  onClick={() => navigate("/signin")}
+                  onClick={() => navigate("/login")}
                   className="font-semibold text-indigo-600 hover:underline"
                 >
                   Sign In
@@ -322,6 +317,7 @@ const AuthCard = ({ type }: AuthProps) => {
                 </button>
               </>
             )}
+            {/* <GoogleButton disabled /> */}
           </div>
         </div>
       </div>

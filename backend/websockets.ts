@@ -81,7 +81,7 @@ wss.on('connection', async(socket, req) => {
         return;
     }
 
-    const addParticipant = findLink.participants.some((x) => {
+    const addParticipant = findLink.participants.some((x: any) => {
         x.userId === authSocket.userId;
     })
 
