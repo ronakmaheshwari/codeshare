@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import SignupPage from './pages/signup';
 import { Toaster } from 'sonner';
 import LoginPage from './pages/login';
+import CodeEditor from './pages/codeEditor';
 
 const queryClient = new QueryClient()
 
@@ -15,6 +16,7 @@ export function App() {
           <Routes>
             <Route path='/signup' element={ <SignupPage /> } />
             <Route path='/login' element={ <LoginPage /> } />
+            <Route path='/code/:link' element={ <CodeEditor /> } />
             <Route path="*" element={""} />
           </Routes>
       </Router>

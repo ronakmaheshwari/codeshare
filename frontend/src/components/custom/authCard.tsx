@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { useAuth } from "@/provider/authContext";
 import { useNavigate } from "react-router-dom";
 import {
@@ -14,7 +14,7 @@ import { Shapes, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { toast } from "sonner";
-import GoogleButton from "react-google-button";
+import { FcGoogle } from 'react-icons/fc';
 
 interface AuthProps {
   type: "signup" | "signin";
@@ -115,8 +115,8 @@ const AuthCard = ({ type }: AuthProps) => {
     }
   })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
 
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
@@ -130,7 +130,7 @@ const AuthCard = ({ type }: AuthProps) => {
     mutation.mutate();
     setIsSubmitting(false);
   };
-
+  
   return (
     <div className="min-h-screen flex flex-col lg:flex-row overflow-hidden bg-slate-50">
       <div className="hidden lg:block w-[60%] p-5">
@@ -289,6 +289,17 @@ const AuthCard = ({ type }: AuthProps) => {
                     "Sign In"
                   )}
                 </Button>
+                
+              </Field>
+              <Field>
+                <Button
+                  disabled
+                  variant="outline"
+                  className="w-full h-12 flex items-center justify-center gap-2 bg-white text-neutral-800 border border-stone-300 hover:bg-stone-50"
+                >
+                  <FcGoogle size={30} />
+                  Sign in with Google
+                </Button>
               </Field>
             </FieldGroup>
           </form>
@@ -317,7 +328,7 @@ const AuthCard = ({ type }: AuthProps) => {
                 </button>
               </>
             )}
-            {/* <GoogleButton disabled /> */}
+            
           </div>
         </div>
       </div>
