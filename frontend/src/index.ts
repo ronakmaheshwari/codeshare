@@ -7,6 +7,12 @@ const server = serve({
     // Serve index.html for all unmatched routes.
     
     "/*": index,
+    "/api/config": async () => {
+      return Response.json({
+        apiUrl: process.env.VITE_API_URL,
+        websocketUrl: process.env.VITE_WEBSOCKET_URL,
+      });
+    },
 
     "/api/hello": {
       async GET(req) {

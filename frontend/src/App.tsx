@@ -8,7 +8,7 @@ import CodeEditor from './pages/codeEditor';
 import ProtectedRoute from './components/custom/ProtectedRoute';
 import { AuthProvider } from './provider/authContext'; 
 
-const queryClient = new QueryClient()
+export const queryClient = new QueryClient()
 
 export function App() {
   return (

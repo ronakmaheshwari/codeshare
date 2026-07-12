@@ -13,7 +13,8 @@
     "@types/ws": "^8.18.1"
   },
   "scripts": {
-    "dev": "bun --watch server.ts"
+    "dev": "bun --watch main.ts",
+    "socket": " bun --watch websockets.ts"
   },
   "peerDependencies": {
     "typescript": "^5"

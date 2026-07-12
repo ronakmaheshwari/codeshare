@@ -82,8 +82,10 @@ wss.on('connection', async(socket, req) => {
     }
 
     const addParticipant = findLink.participants.some((x: any) => {
-        x.userId === authSocket.userId;
-    })
+        return (
+            x.userId === authSocket.userId
+        )
+    });
 
     if(!addParticipant) {
         await db.participant.create({

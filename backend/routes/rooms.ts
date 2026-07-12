@@ -231,6 +231,7 @@ roomRouter.get("/participants/:link", userMiddleware, async (req: Request, res: 
                     id: true,
                     user:{
                         select:{
+                            id: true,
                             name: true,
                             email: true
                         }
@@ -278,6 +279,7 @@ roomRouter.post("/role/:link", userMiddleware, async (req: Request, res: Respons
       }
 
       const {updatedUser,role} = parsed.data;
+      console.log(`This is the user: ${updatedUser}, role: ${role}`)
 
       const room = await db.room.findUnique({
         where: { link: link as string },
@@ -318,6 +320,8 @@ roomRouter.post("/role/:link", userMiddleware, async (req: Request, res: Respons
           message: "You do not have permission to edit this room",
         });
       }
+
+      console.log(`The room: ${room}`)
 
       const findUser = await db.participant.findUnique({
         where:{

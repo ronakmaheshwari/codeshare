@@ -4,7 +4,7 @@ declare global {
  var prisma: PrismaClient | undefined
 }
 
-const db = global.prisma ?? new PrismaClient({log:["query", "warn", "error"]});
+const db = global.prisma ?? new PrismaClient(); //{log:["query", "warn", "error"]}
 if (process.env.NODE_ENV !== "production") global.prisma = db;
 
 export default db;

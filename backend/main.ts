@@ -13,3 +13,7 @@ app.use(express.json())
 app.use(morgan("dev"))
 
 app.use("/api/v1", router);
+
+app.listen(port,()=>{
+    console.log(`Server is running on http://localhost:${port}`);
+})
