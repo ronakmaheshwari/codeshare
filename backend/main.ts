@@ -8,8 +8,8 @@ dotenv.config();
 export const app: Express = express()
 export const port = process.env.PORT || 3000;
 
-app.use(express.json())
 app.use(cors())
+app.use(express.json())
 app.use(morgan("dev"))
 
 app.use("/api/v1", router);

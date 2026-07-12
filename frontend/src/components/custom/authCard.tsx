@@ -101,14 +101,19 @@ const AuthCard = ({ type }: AuthProps) => {
           email: formData.email,
           password: formData.password
         });
+        
+        console.log(response.data);
 
         return response.data;
       }
     },
+    
     onSuccess: (data) => {
+      localStorage.setItem("token", data.token);
       setToken(data.token);
       navigate("/home");
     },
+
     onError: (data) => {
       const err = data.message ?? "An unexpected error took place";
       toast(err);

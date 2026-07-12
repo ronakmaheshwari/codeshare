@@ -5,21 +5,27 @@ import SignupPage from './pages/signup';
 import { Toaster } from 'sonner';
 import LoginPage from './pages/login';
 import CodeEditor from './pages/codeEditor';
+import ProtectedRoute from './components/custom/ProtectedRoute';
+import { AuthProvider } from './provider/authContext'; 
 
 const queryClient = new QueryClient()
 
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Toaster />
-      <Router>
+      <AuthProvider>
+        <Toaster />
+        <Router>
           <Routes>
-            <Route path='/signup' element={ <SignupPage /> } />
-            <Route path='/login' element={ <LoginPage /> } />
-            <Route path='/code/:link' element={ <CodeEditor /> } />
+            <Route path='/signup' element={<SignupPage />} />
+            <Route path='/login' element={<LoginPage />} />
+            <Route path='/code/:link' element={
+                <CodeEditor />
+            } />
             <Route path="*" element={""} />
           </Routes>
-      </Router>
+        </Router>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
