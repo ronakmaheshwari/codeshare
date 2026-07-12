@@ -139,7 +139,7 @@ const SandBox = forwardRef(function CodeEditor(
   };
 
   return (
-    <div className="flex-1 h-full w-full rounded-sm overflow-hidden">
+    <div className="flex-1 h-full w-full overflow-hidden">
       <Editor
         width="100%"
         height="100%"
