@@ -229,6 +229,7 @@ roomRouter.get("/participants/:link", userMiddleware, async (req: Request, res: 
                 },
                 select:{
                     id: true,
+                    isOnline: true,
                     user:{
                         select:{
                             id: true,

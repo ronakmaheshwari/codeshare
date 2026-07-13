@@ -92,10 +92,23 @@ wss.on('connection', async(socket, req) => {
             data: {
                 userId: authSocket.userId,
                 roomId: findLink.id,
-                role: "viewer"
+                role: "viewer",
+                isOnline: true,
             }
         })
     };
+
+    await db.participant.update({
+        where: {
+            userId_roomId: {
+                userId: authSocket.userId,
+                roomId: findLink.id,
+            }
+        },
+        data: {
+            isOnline: true,
+        }
+    })
 
     authSocket.roomId = findLink.id;
     if(!roomClients.has(findLink.id)) {
@@ -157,7 +170,19 @@ wss.on('connection', async(socket, req) => {
         }
     });
 
-    socket.on("close", () => {
+    socket.on("close", async () => {
+        await db.participant.update({
+            where: {
+                userId_roomId: {
+                    userId: authSocket.userId as string,
+                    roomId: findLink.id,
+                }
+            },
+            data: {
+                isOnline: false,
+            }
+        })
+        
         const clients = roomClients.get(findLink.id);
         if (clients) {
             clients.delete(authSocket);

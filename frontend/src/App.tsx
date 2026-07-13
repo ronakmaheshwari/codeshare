@@ -7,6 +7,7 @@ import LoginPage from './pages/login';
 import CodeEditor from './pages/codeEditor';
 import ProtectedRoute from './components/custom/ProtectedRoute';
 import { AuthProvider } from './provider/authContext'; 
+import Dashboard from './pages/dashboard';
 
 export const queryClient = new QueryClient()
 
@@ -19,6 +20,7 @@ export function App() {
           <Routes>
             <Route path='/signup' element={<SignupPage />} />
             <Route path='/login' element={<LoginPage />} />
+            <Route path='/home' element={<Dashboard />} />
             <Route path='/code/:link' element={
                 <CodeEditor />
             } />
