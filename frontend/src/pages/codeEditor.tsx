@@ -43,9 +43,11 @@ export default function CodeEditor() {
     const [code, setCode] = useState("");
     const [language, setLanuage] = useState("");
 
-    if(!link) {
-        navigate("/");
+    useEffect(() => {
+    if (!link) {
+        navigate("/home");
     }
+    }, [link, navigate]);
 
     useQuery({
         queryKey: ["room", link],

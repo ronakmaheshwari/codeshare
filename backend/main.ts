@@ -3,6 +3,7 @@ import morgan from "morgan"
 import cors from "cors"
 import dotenv from "dotenv"
 import router from "./routes/router";
+// import "./websockets";
 
 dotenv.config();
 export const app: Express = express()

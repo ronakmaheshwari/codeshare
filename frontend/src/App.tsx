@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import "./index.css";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import SignupPage from './pages/signup';
@@ -18,6 +18,7 @@ export function App() {
         <Toaster />
         <Router>
           <Routes>
+            <Route path='/' element={ <Navigate to={"/signup"} replace /> } />
             <Route path='/signup' element={<SignupPage />} />
             <Route path='/login' element={<LoginPage />} />
             <Route path='/home' element={

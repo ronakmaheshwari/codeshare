@@ -1,25 +1,27 @@
 import axios from "axios"
-let httpUrl: string | undefined;
-let websocketUrl: string | undefined;
 
-const configPromise = fetch("/api/config")
-  .then(res => res.json())
-  .then((config) => {
-    httpUrl = config.apiUrl;
-    websocketUrl = config.websocketUrl;
-    return config;
-  });
+declare global {
+  interface Window {
+    env_?: {
+      VITE_API_URL: string;
+      VITE_WEBSOCKET_URL: string;
+    };
+  }
+}
 
-export const getConfig = () => configPromise;
+export async function getConfig() {
+  return {
+    apiUrl: window.env_?.VITE_API_URL,
+    websocketUrl: window.env_?.VITE_WEBSOCKET_URL,
+  };
+}
 
 const api = axios.create();
 
 api.interceptors.request.use(async (config) => {
-  await configPromise;
-  config.baseURL = httpUrl;
+  const { apiUrl } = await getConfig();
+  config.baseURL = apiUrl;
   return config;
 });
-
-export { httpUrl, websocketUrl };
 
 export default api

@@ -14,7 +14,8 @@
   },
   "scripts": {
     "dev": "bun --watch main.ts",
-    "socket": " bun --watch websockets.ts"
+    "socket": " bun --watch websockets.ts",
+    "generate:db": "bunx prisma generate"
   },
   "peerDependencies": {
     "typescript": "^5"

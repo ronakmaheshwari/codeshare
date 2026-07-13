@@ -1,0 +1,30 @@
+# Version control
+.git
+.gitignore
+
+# Dependencies (Installed locally)
+node_modules/
+venv/
+.venv
+env/
+
+# Build outputs and artifacts
+dist/
+build/
+*.egg-info/
+
+# Environments and Secrets
+.env
+.env.*
+*.pem
+*.key
+
+# IDEs and OS metadata
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+.DS_Store
+Thumbs.db
+
+.dockerignore

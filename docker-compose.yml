@@ -1,0 +1,92 @@
+services:
+  postgres:
+    image: postgres:latest
+    restart: unless-stopped
+    environment:
+      - POSTGRES_PASSWORD=mysecretpassword
+    ports:
+      - "5432:5432"
+    volumes:
+    - "codeshare:/var/lib/postgresql:rw"
+    networks:
+      - codeshare
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    env_file:
+      - ./backend/.env
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:mysecretpassword@postgres:5432/postgres
+    networks:
+      - codeshare
+  ws1:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    restart: unless-stopped
+    command: ["bun", "run", "socket"]
+    depends_on:
+      - postgres
+    env_file:
+      - ./backend/.env
+    environment:
+      - DATABASE_URL=postgresql://postgres:mysecretpassword@postgres:5432/postgres
+    networks:
+      - codeshare
+  ws2:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    restart: unless-stopped
+    command: ["bun", "run", "socket"]
+    depends_on:
+      - postgres
+    env_file:
+      - ./backend/.env
+    environment:
+      - DATABASE_URL=postgresql://postgres:mysecretpassword@postgres:5432/postgres
+    networks:
+      - codeshare
+  frontend: 
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - ws1
+      - ws2
+    env_file:
+      - ./frontend/.env
+    environment:
+      - VITE_API_URL=http://localhost/api/v1
+      - VITE_WEBSOCKET_URL=ws://localhost/ws
+    networks:
+      - codeshare
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+      - ws1
+      - ws2
+    networks:
+      - codeshare
+
+volumes:
+  codeshare:
+  
+networks:
+  codeshare:
+    driver: bridge
