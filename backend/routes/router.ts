@@ -1,6 +1,7 @@
 import { Router } from "express";
 import userRouter from "./user";
 import roomRouter from "./rooms";
+import dashboardRouter from "./dashboard";
 
 interface RouterInterface {
     path: string,
@@ -17,7 +18,11 @@ const allRouters:RouterInterface[] = [
     {
         path:'/room',
         router: roomRouter
-    }
+    },
+    {
+        path: "/dashboard",
+        router: dashboardRouter
+    },
 ]
 
 allRouters.forEach((x) => {

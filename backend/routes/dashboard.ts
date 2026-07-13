@@ -63,13 +63,13 @@ dashboardRouter.get("/rooms", userMiddleware, async (req: Request, res: Response
             })
         ])
 
-        return {
+        return res.status(200).json({
             error: false,
             message: "All the room details were successfully fetched",
             data: getAllRooms,
             participatedRooms: roomCount,
             roomsOwned: roomsOwned
-        }
+        })
     } catch (error) {
         console.log(error);
         return res.status(500).json({

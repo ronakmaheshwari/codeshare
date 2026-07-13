@@ -20,7 +20,11 @@ export function App() {
           <Routes>
             <Route path='/signup' element={<SignupPage />} />
             <Route path='/login' element={<LoginPage />} />
-            <Route path='/home' element={<Dashboard />} />
+            <Route path='/home' element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
             <Route path='/code/:link' element={
                 <CodeEditor />
             } />
