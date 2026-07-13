@@ -44,6 +44,10 @@ export const roleUpgradeValidation = z.object({
     role: z.enum(Role,{error: "Invalid role was provided"})
 })
 
+export const roomUpgradeValidation = z.object({
+    editable: z.boolean({error: "It can be either TRUE or FALSE"})
+})
+
 export type signupType = z.infer<typeof signupValidation>
 export type loginType = z.infer<typeof loginValidation>
 export type resetOtpType = z.infer<typeof resetOptValidation>
@@ -51,3 +55,4 @@ export type resetType = z.infer<typeof resetValidation>
 export type resetPasswordType = z.infer<typeof resetPasswordValidation>
 export type roomType = z.infer<typeof roomValidation>
 export type messageType = z.infer<typeof messageValidation>
+export type roomUpgradeType = z.infer<typeof roomUpgradeValidation>

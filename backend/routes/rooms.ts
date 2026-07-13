@@ -3,7 +3,7 @@ import dotenv from "dotenv"
 import { userMiddleware } from "../middleware";
 import db from "../utils/db";
 import linkGenerator, { Duplicate_links } from "../utils/link";
-import { roleUpgradeValidation } from "../utils/types";
+import { roleUpgradeValidation, roomUpgradeValidation } from "../utils/types";
 import type { Prisma } from "@prisma/client";
 
 dotenv.config();
@@ -447,6 +447,82 @@ roomRouter.patch("/upgrade/:link", userMiddleware, async (req: Request, res: Res
         message: "Internal server error",
       });
     }
+})
+
+roomRouter.patch("/edit/:link", userMiddleware, async (req: Request, res: Response) => {
+    const user = req.userId;
+
+    if(!user) {
+        return res.status(401).json({
+            error: true,
+            message: "No UserID was given",
+        })
+    };
+
+    const {link} = req.params;
+    if(!link) {
+        return res.status(401).json({
+            error: true,
+            message: "No Link was provided",
+        })
+    }
+
+    const parsed = roomUpgradeValidation.safeParse(req.body);
+    if(!parsed.success) {
+        const error = parsed.error.format();
+        return res.status(401).json({
+            error: true,
+            message: "Invalid data format was provided",
+            data: error
+        })
+    }
+    const {editable} = parsed.data;
+
+    const findRoom = await db.room.findUnique({
+        where: {
+            link: link as string,
+        },
+    })
+
+    if(!findRoom) {
+        return res.status(401).json({
+            error: true,
+            message: "No Link was provided",
+        })
+    }
+
+    if(findRoom.ownerId !== user) {
+        return res.status(401).json({
+            error: true,
+            message: "You are unauthorized to perform this action as you are not the owner of this room"
+        })
+    }
+    const updateData: Record<string, string> = {};
+    editable === false ? (updateData.role = "viewer") : null;
+
+    await db.$transaction(async (tx: Prisma.TransactionClient) => {
+        await tx.room.update({
+            where: {
+                id: findRoom.id
+            },
+            data: {
+                isEditable: editable
+            }
+        });
+        await tx.participant.updateMany({
+            where: {
+                userId: {
+                    not: user
+                }
+            },
+            data: updateData
+        })
+    });
+
+    return res.status(200).json({
+        error: false,
+        message: "The room was updated successfully"
+    })
 })
 
 roomRouter.delete("/:link",userMiddleware, async (req: Request, res: Response) => {
