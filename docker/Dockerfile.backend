@@ -4,7 +4,7 @@ WORKDIR /backend
 COPY backend/package.json backend/prisma.config.ts backend/bun.lock backend/tsconfig.json ./
 COPY backend/prisma ./prisma
 
-RUN bun install --frozen-lockfile
+RUN rm -rf /root/.bun/install/cache && bun install
 
 COPY backend/. .
 
