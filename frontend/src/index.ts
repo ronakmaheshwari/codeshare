@@ -9,8 +9,8 @@ const server = serve({
     "/*": index,
     "/api/config": async () => {
       return Response.json({
-        apiUrl: process.env.VITE_API_URL ?? import.meta.env.VITE_API_URL,
-        websocketUrl: process.env.VITE_WEBSOCKET_URL ?? import.meta.env.VITE_WEBSOCKET_URL,
+        apiUrl: process.env.VITE_API_URL,
+        websocketUrl: process.env.VITE_WEBSOCKET_URL,
       });
     },
 
