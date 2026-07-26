@@ -11,12 +11,15 @@ declare global {
 
 export async function getConfig() {
   return {
-    apiUrl: window.env_?.VITE_API_URL,
-    websocketUrl: window.env_?.VITE_WEBSOCKET_URL,
+    apiUrl: window.env_?.VITE_API_URL ?? import.meta.env.VITE_API_URL,
+    websocketUrl: window.env_?.VITE_WEBSOCKET_URL ?? import.meta.env.VITE_WEBSOCKET_URL,
   };
 }
 
 const api = axios.create();
+
+console.log(import.meta.env.VITE_API_URL);
+console.log(import.meta.env.VITE_WEBSOCKET_URL);
 
 api.interceptors.request.use(async (config) => {
   const { apiUrl } = await getConfig();
