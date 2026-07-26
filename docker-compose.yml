@@ -28,9 +28,8 @@ services:
   ws1:
     build:
       context: .
-      dockerfile: docker/Dockerfile.backend
+      dockerfile: docker/Dockerfile.ws
     restart: unless-stopped
-    command: ["bun", "run", "socket"]
     depends_on:
       - postgres
     env_file:
@@ -42,9 +41,8 @@ services:
   ws2:
     build:
       context: .
-      dockerfile: docker/Dockerfile.backend
+      dockerfile: docker/Dockerfile.ws
     restart: unless-stopped
-    command: ["bun", "run", "socket"]
     depends_on:
       - postgres
     env_file:

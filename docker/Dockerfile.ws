@@ -1,0 +1,13 @@
+FROM oven/bun:latest
+WORKDIR /backend
+
+COPY backend/package.json backend/prisma.config.ts backend/bun.lock backend/tsconfig.json ./
+COPY backend/prisma ./prisma
+
+RUN rm -rf /root/.bun/install/cache && bun install
+
+COPY backend/. .
+
+EXPOSE 3000 3001
+
+CMD ["sh", "-c", "bun run generate:db && bun run socket"]
